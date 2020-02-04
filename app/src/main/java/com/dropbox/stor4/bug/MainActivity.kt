@@ -29,8 +29,11 @@ class MainActivity : AppCompatActivity() {
         .fromNonFlow<Unit, BigInteger> {
             rpc.info.headBlockNum
         }.build()
+    private val seenRequests = mutableSetOf<BigInteger>()
     private val blockInfoStore = StoreBuilder
         .fromNonFlow<BigInteger, GetBlockResponse> {
+            println("request for $it. seen before? ${seenRequests.contains(it)}, ${seenRequests}")
+            seenRequests.add(it)
             rpc.getBlock(GetBlockRequest(it.toString()))
         }.cachePolicy(
             MemoryPolicy.builder()
@@ -59,7 +62,7 @@ class MainActivity : AppCompatActivity() {
                 inUI {
                     statuses[i.toInt()].text = "Fetching block #$block"
                 }
-                blockInfoStore.stream(StoreRequest.cached(block, true)).execute({
+                blockInfoStore.stream(StoreRequest.cached(block, false)).execute({
                     countBlocks(block)
                 }) {
                     inUI {
